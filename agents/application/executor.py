@@ -213,25 +213,31 @@ class Executor:
             market_yes = float(outcome_prices[0])
             market_no = float(outcome_prices[1])
             
+            # Calcular edge y confianza
+            edge_yes = abs(ai_probability - market_yes)
+            edge_no = abs((1 - ai_probability) - market_no)
+            confidence_yes = ai_probability
+            confidence_no = 1 - ai_probability
+            
             # Crear trade basado en el análisis
-            if ai_probability > market_yes:  # Si la IA cree que YES está subvalorado
+            if edge_yes > 0.02 or confidence_yes > 0.75:  # Si hay edge significativo o alta confianza en YES
                 trade_dict = {
                     'side': 'BUY',
                     'position': 'YES',
                     'price': market_yes,
-                    'edge': abs(ai_probability - market_yes)
+                    'edge': edge_yes,
+                    'confidence': confidence_yes
                 }
-            else:  # Si la IA cree que NO está subvalorado
+            elif edge_no > 0.02 or confidence_no > 0.75:  # Si hay edge significativo o alta confianza en NO
                 trade_dict = {
                     'side': 'BUY',
                     'position': 'NO',
                     'price': market_no,
-                    'edge': abs((1 - ai_probability) - market_no)
+                    'edge': edge_no,
+                    'confidence': confidence_no
                 }
-
-            # Verificar si el edge es suficiente
-            if trade_dict['edge'] < 0.02:  # 2% mínimo de edge
-                print(f"{Fore.YELLOW}Edge too small ({trade_dict['edge']:.2%}), skipping market{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.YELLOW}Neither sufficient edge ({max(edge_yes, edge_no):.2%}) nor confidence ({max(confidence_yes, confidence_no):.2%}){Style.RESET_ALL}")
                 return None
             
             trade_dict.update({

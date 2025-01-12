@@ -99,11 +99,11 @@ class Trader:
                 market_data = market[0].dict()["metadata"]
                 print(f"\n{Fore.YELLOW}=== Analyzing Market ===")
                 print(f"Market: {market_data['question']}")
-                print(f"Current Prices:")
+                print(f"Current Prices:\n")
                 prices = ast.literal_eval(market_data['outcome_prices'])
                 print(f"YES: ${prices[0]} ({Fore.RED}{float(prices[0])*100:.1f}%{Style.RESET_ALL})")
-                print(f"NO: ${prices[1]} ({Fore.RED}{float(prices[1])*100:.1f}%{Style.RESET_ALL})")
-                print(f"Volume: ${float(market_data.get('volume', 0)):,.2f}")
+                print(f"{Fore.YELLOW}NO: ${prices[1]} ({Fore.RED}{float(prices[1])*100:.1f}%{Style.RESET_ALL})")
+                print(f"{Fore.YELLOW}Volume: ${float(market_data.get('volume', 0)):,.2f}\n")
 
                 best_trade = self.agent.source_best_trade(market)
                 
