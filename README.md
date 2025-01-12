@@ -21,7 +21,7 @@
 PolyAgent is the first AI agent able to bet on his own predictions directly through the Polymarket API —all registered in the Blockchain.
 
 
-## Features
+## Features ⚙️
 
 - Integration with Polymarket API
 - AI utilities for smarter prediction markets
@@ -40,7 +40,16 @@ PolyAgent is the first AI agent able to bet on his own predictions directly thro
 
 More to come...
 
-# Getting started
+## Future features 🛠️
+
+- Betting in selective markets (Only Sports, Only Politics, Only Crypto, etc)
+- Direct web browsing (Access to better data sources)
+- Perplexity API integration
+- Categorization of news sources
+- More sophisticated RAG
+- Better trading strategies
+
+# Getting started 🚀
 
 This repo is inteded for use with Python 3.9
 
@@ -123,11 +132,11 @@ This repo is inteded for use with Python 3.9
    ./scripts/bash/run-docker-dev.sh
    ```
 
-## Architecture
+## Architecture 📚
 
 The Polyagent architecture features modular components that can be maintained and extended by individual community members.
 
-### APIs
+### APIs 🌐
 
 Polyagent connectors standardize data sources and order types.
 
@@ -139,7 +148,7 @@ Polyagent connectors standardize data sources and order types.
 
 - `Objects.py`: data models using Pydantic; representations for trades, markets, events, and related entities.
 
-### Scripts
+### Scripts 📜
 
 Files for managing your local environment, server set-up to run the application remotely, and cli for end-user commands.
 
@@ -161,7 +170,7 @@ Retrieve and display a list of markets from Polymarket, sorted by volume.
 - limit: The number of markets to retrieve (default: 5).
 - sort_by: The sorting criterion, either volume (default) or another valid attribute.
 
-# Prediction markets reading
+# Prediction markets reading 📚
 
 - Prediction Markets: Bottlenecks and the Next Major Unlocks, Mikey 0x: https://mirror.xyz/1kx.eth/jnQhA56Kx9p3RODKiGzqzHGGEODpbskivUUNdd7hwh0
 - The promise and challenges of crypto + AI applications, Vitalik Buterin: https://vitalik.eth.limo/general/2024/01/30/cryptoai.html
