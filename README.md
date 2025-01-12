@@ -11,11 +11,6 @@
     Trade autonomously on Polymarket using AI Agents
     <br />
     <a href="https://twitter.com/PolyAgent"><strong>Twitter »</strong></a>
-    <br />
-    <br />
-    <a href="https://x.com/Polyagent_ai/status/1877621209585586293">View Demo</a>
-    ·
-    ·
   </p>
 </div>
 
