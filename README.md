@@ -42,7 +42,7 @@ More to come...
 
 ## Future features 🛠️
 
-- Betting in selective markets (Only Sports, Only Politics, Only Crypto, etc)
+- Betting in selective markets (Only Sports, Only Politics, Only Crypto, etc) ✅
 - Direct web browsing (Access to better data sources)
 - Perplexity API integration
 - Categorization of news sources
