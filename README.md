@@ -103,6 +103,7 @@ This repo is inteded for use with Python 3.9
    NEWSAPI_API_KEY=""
    export PYTHONPATH="."
    DRY_RUN=
+   MARKET_CATEGORY="all"  # Options: all, sports, politics, crypto, entertainment, tech
    ```
 
 6. Load your wallet with USDC.
@@ -131,6 +132,21 @@ This repo is inteded for use with Python 3.9
    ./scripts/bash/build-docker.sh
    ./scripts/bash/run-docker-dev.sh
    ```
+
+## Setup
+
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Download spaCy model:
+```bash
+python -m spacy download en_core_web_sm
+```
+
+3. Configure environment variables:
+...
 
 ## Architecture 📚
 

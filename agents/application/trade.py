@@ -95,59 +95,62 @@ class Trader:
             # Para las respuestas de la IA
             print(f"\n{Fore.YELLOW}AI analyzing markets...{Style.RESET_ALL}")
 
-            for market in filtered_markets:
-                market_data = market[0].dict()["metadata"]
-                print(f"\n{Fore.YELLOW}=== Analyzing Market ===")
-                print(f"Market: {market_data['question']}")
-                print(f"Current Prices:\n")
-                prices = ast.literal_eval(market_data['outcome_prices'])
-                print(f"YES: ${prices[0]} ({Fore.RED}{float(prices[0])*100:.1f}%{Style.RESET_ALL})")
-                print(f"{Fore.YELLOW}NO: ${prices[1]} ({Fore.RED}{float(prices[1])*100:.1f}%{Style.RESET_ALL})")
-                print(f"{Fore.YELLOW}Volume: ${float(market_data.get('volume', 0)):,.2f}\n")
+            for market_tuple in filtered_markets:
+                try:
+                    market_data = market_tuple[0]  # SimpleMarket
+                    print(f"\n{Fore.YELLOW}=== Analyzing Market ===")
+                    print(f"Market: {market_data.question}")
+                    print(f"Current Prices:")
+                    prices = ast.literal_eval(market_data.outcome_prices)
+                    print(f"YES: ${prices[0]} ({Fore.RED}{float(prices[0])*100:.1f}%{Style.RESET_ALL})")
+                    print(f"NO: ${prices[1]} ({Fore.RED}{float(prices[1])*100:.1f}%{Style.RESET_ALL})")
+                    print(f"Volume: ${float(market_data.volume if hasattr(market_data, 'volume') else 0):,.2f}")
 
-                best_trade = self.agent.source_best_trade(market)
-                
-                if best_trade and isinstance(best_trade, dict):
-                    print(f"\nAI Decision:")
-                    position = best_trade.get('position', 'UNKNOWN')
-                    print(f"Action: BUY {position}")
+                    best_trade = self.agent.source_best_trade(market_tuple)
                     
-                    # Asegurar que el precio es float
-                    target_price = float(best_trade.get('price', 0))
-                    current_price = float(prices[0])
-                    edge = abs(current_price - target_price)
-                    
-                    print(f"Target Price: ${target_price}")
-                    print(f"Expected Edge: ${edge:.4f}")
-                    print(f"Confidence: High based on market conditions")
-                    print(f"Reasoning: {best_trade.get('prediction', 'No prediction available')}")
-                    print(f"===================={Style.RESET_ALL}")
-                    
-                    amount = 1.0
-                    best_trade['size'] = amount
-                    best_trade['price'] = target_price
-                    
-                    print(f"\n{Fore.GREEN}6. TRYING TRADE FOR MARKET {market_data['question']}")
-                    print(f"   Amount: ${amount} USDC")
-                    print(f"   Price: {best_trade['price']}")
-                    print(f"   Side: BUY {best_trade.get('position')}{Style.RESET_ALL}")
+                    if best_trade and isinstance(best_trade, dict):
+                        print(f"\nAI Decision:")
+                        position = best_trade.get('position', 'UNKNOWN')
+                        print(f"Action: BUY {position}")
+                        
+                        # Asegurar que el precio es float
+                        target_price = float(best_trade.get('price', 0))
+                        edge = best_trade.get('edge', 0)
+                        
+                        print(f"Target Price: ${target_price}")
+                        print(f"Expected Edge: ${edge:.4f}")
+                        print(f"Confidence: High based on market conditions")
+                        print(f"Reasoning: {best_trade.get('prediction', 'No prediction available')}")
+                        print(f"===================={Style.RESET_ALL}")
+                        
+                        amount = 1.0
+                        best_trade['size'] = amount
+                        best_trade['price'] = target_price
+                        
+                        print(f"\n{Fore.GREEN}6. TRYING TRADE FOR MARKET {market_data.question}")
+                        print(f"   Amount: ${amount} USDC")
+                        print(f"   Price: {best_trade['price']}")
+                        print(f"   Side: BUY {best_trade.get('position')}{Style.RESET_ALL}")
 
-                    if self.dry_run:
-                        print("\n🔍 DRY RUN: Trade would be executed with these parameters")
-                        print(f"   Token ID: {market[0].dict()['metadata']['clob_token_ids']}")
-                        print(f"   Market Question: {market[0].dict()['metadata']['question']}")
-                        print("Skipping actual transaction...")
-                        continue
+                        if self.dry_run:
+                            print("\n🔍 DRY RUN: Trade would be executed with these parameters")
+                            print(f"   Token ID: {market_data.clob_token_ids}")
+                            print(f"   Market Question: {market_data.question}")
+                            print("Skipping actual transaction...")
+                            continue
 
-                    amount = self.agent.format_trade_prompt_for_execution(best_trade)
-                    trade = self.polymarket.execute_market_order(market, amount)
-                    
-                    if trade:
-                        print(f"7. TRADED SUCCESSFULLY {trade}")
-                        return
-                    else:
-                        print("Trade failed or skipped, trying next market...")
-                        continue
+                        amount = self.agent.format_trade_prompt_for_execution(best_trade)
+                        trade = self.polymarket.execute_market_order(market_data, amount)
+                        
+                        if trade:
+                            print(f"7. TRADED SUCCESSFULLY {trade}")
+                            return
+                        else:
+                            print("Trade failed or skipped, trying next market...")
+                            continue
+                except Exception as e:
+                    print(f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}")
+                    continue
 
             print("\nNo eligible markets found for trading")
 

@@ -89,39 +89,6 @@ class PolymarketRAG:
         # query
         return local_db.similarity_search_with_score(query=prompt)
 
-    def markets(self, markets: "list[SimpleMarket]", prompt: str) -> "list[tuple]":
-        # create local json file
-        local_events_directory: str = "./local_db_markets"
-        if not os.path.isdir(local_events_directory):
-            os.mkdir(local_events_directory)
-        local_file_path = f"{local_events_directory}/markets.json"
-        with open(local_file_path, "w+") as output_file:
-            json.dump(markets, output_file)
-
-        # create vector db
-        def metadata_func(record: dict, metadata: dict) -> dict:
-
-            metadata["id"] = record.get("id")
-            metadata["outcomes"] = record.get("outcomes")
-            metadata["outcome_prices"] = record.get("outcome_prices")
-            metadata["question"] = record.get("question")
-            metadata["clob_token_ids"] = record.get("clob_token_ids")
-
-            return metadata
-
-        loader = JSONLoader(
-            file_path=local_file_path,
-            jq_schema=".[]",
-            content_key="description",
-            text_content=False,
-            metadata_func=metadata_func,
-        )
-        loaded_docs = loader.load()
-        embedding_function = OpenAIEmbeddings(model="text-embedding-3-small")
-        vector_db_directory = f"{local_events_directory}/chroma"
-        local_db = Chroma.from_documents(
-            loaded_docs, embedding_function, persist_directory=vector_db_directory
-        )
-
-        # query
-        return local_db.similarity_search_with_score(query=prompt)
+    def markets(self, markets: "list[tuple[SimpleMarket, float]]", prompt: str) -> "list[tuple[SimpleMarket, float]]":
+        # Devolver los mercados sin modificar
+        return markets

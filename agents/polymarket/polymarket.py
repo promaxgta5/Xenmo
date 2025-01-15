@@ -302,8 +302,8 @@ class Polymarket:
                 "closed": "false",
                 "archived": "false",
                 "limit": "10",
-                "order": "volume",  # Ordenar por volumen total
-                "ascending": "false"  # Orden descendente (mayor a menor)
+                "order": "volume",
+                "ascending": "false"
             }
             
             res = httpx.get(
@@ -322,26 +322,26 @@ class Polymarket:
                     events = []
                     for market in markets:
                         # Solo considerar mercados con volumen significativo
-                        if float(market.get("volume", 0)) > 10000:  # Mínimo $10k en volumen total
-                            event = SimpleEvent(
-                                id=int(market.get("id")),
-                                ticker=market.get("slug", ""),
-                                slug=market.get("slug", ""),
-                                title=market.get("question", ""),
-                                description=market.get("description", ""),
-                                end=market.get("endDate", ""),
-                                active=market.get("active", False),
-                                closed=market.get("closed", True),
-                                archived=market.get("archived", False),
-                                restricted=market.get("restricted", False),
-                                new=market.get("new", False),
-                                featured=market.get("featured", False),
-                                markets=str(market.get("id", ""))
-                            )
+                        if float(market.get("volume", 0)) > 10000:
+                            event_data = {
+                                "id": str(market.get("id")),  # Convertir a string
+                                "title": market.get("question", ""),
+                                "description": market.get("description", ""),
+                                "markets": str(market.get("id", "")),
+                                "metadata": {
+                                    "question": market.get("question", ""),
+                                    "markets": str(market.get("id", "")),
+                                    "volume": float(market.get("volume", 0)),
+                                    "featured": market.get("featured", False),
+                                    "outcome_prices": market.get("outcomePrices", "[]"),
+                                    "outcomes": market.get("outcome", "[]")
+                                }
+                            }
+                            event = SimpleEvent(**event_data)
                             events.append(event)
                     
                     print(f"\nTop mercados por volumen total:")
-                    for market in markets[:5]:  # Mostrar top 5
+                    for market in markets[:5]:
                         print(f"- {market.get('question')}: ${float(market.get('volume', 0)):,.2f}")
                     
                     return events
@@ -351,17 +351,59 @@ class Polymarket:
             return []
 
     def get_all_tradeable_events(self) -> "list[SimpleEvent]":
-        """Get all tradeable events"""
-        events = self.get_all_events()
-        
-        # Filtrar solo eventos activos y no cerrados
-        tradeable = [
-            event for event in events 
-            if event.active and not event.closed
-        ]
-        
-        print(f"\nFOUND {len(tradeable)} TRADEABLE EVENTS")
-        return tradeable
+        try:
+            params = {
+                "active": "true",
+                "closed": "false",
+                "archived": "false",
+                "limit": "100",
+                "order": "volume",
+                "ascending": "false"
+            }
+            
+            res = httpx.get(
+                f"{self.gamma_url}/markets",
+                params=params,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": "Mozilla/5.0"
+                },
+                timeout=30.0
+            )
+            
+            if res.status_code == 200:
+                markets = res.json()
+                if markets:
+                    events = []
+                    for market in markets:
+                        # Solo considerar mercados con volumen significativo
+                        if float(market.get("volume", 0)) > 10000:
+                            event_data = {
+                                "id": str(market.get("id")),  # Convertir a string
+                                "title": market.get("question", ""),
+                                "description": market.get("description", ""),
+                                "markets": str(market.get("id", "")),
+                                "metadata": {
+                                    "question": market.get("question", ""),
+                                    "markets": str(market.get("id", "")),
+                                    "volume": float(market.get("volume", 0)),
+                                    "featured": market.get("featured", False),
+                                    "outcome_prices": market.get("outcomePrices", "[]"),
+                                    "outcomes": market.get("outcome", "[]")
+                                }
+                            }
+                            event = SimpleEvent(**event_data)
+                            events.append(event)
+                    
+                    print(f"\nTop mercados por volumen total:")
+                    for market in markets[:5]:
+                        print(f"- {market.get('question')}: ${float(market.get('volume', 0)):,.2f}")
+                    
+                    return events
+            return []
+        except Exception as e:
+            print(f"{Fore.RED}Error getting events: {str(e)}{Style.RESET_ALL}")
+            return []
 
     def get_sampling_simplified_markets(self) -> "list[SimpleEvent]":
         markets = []

@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from colorama import Fore, Style
+from collections import defaultdict
+import spacy  # Para NLP
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer  # Para vectorización de texto
 
 from agents.polymarket.gamma import GammaMarketClient as Gamma
 from agents.connectors.chroma import PolymarketRAG as Chroma
@@ -43,6 +47,65 @@ class Executor:
         self.chroma = Chroma()
         self.polymarket = Polymarket()
         self.search = MarketSearch()
+        
+        # Cargar modelo de spaCy para NLP
+        self.nlp = spacy.load("en_core_web_sm")
+        
+        # Definir categorías y sus palabras clave principales
+        self.category_keywords = {
+            "sports": {
+                "leagues": ["nfl", "nba", "mlb", "nhl", "epl", "uefa", "fifa", "f1"],
+                "events": ["super bowl", "world cup", "champions league", "stanley cup", "playoffs"],
+                "roles": ["player", "coach", "team", "manager", "mvp", "rookie"],
+                "actions": ["win", "score", "lead", "defeat", "qualify", "advance"],
+                "metrics": ["points", "goals", "assists", "rebounds", "touchdowns", "yards"],
+                "competitions": ["tournament", "championship", "series", "match", "game", "race"]
+            },
+            "crypto": {
+                "assets": ["bitcoin", "ethereum", "solana", "btc", "eth", "sol"],
+                "metrics": ["price", "market cap", "volume", "liquidity", "supply"],
+                "actions": ["buy", "sell", "trade", "mine", "stake", "yield"],
+                "concepts": ["blockchain", "defi", "nft", "dao", "token", "coin"],
+                "events": ["halving", "fork", "upgrade", "launch", "listing", "airdrop"]
+            },
+            "politics": {
+                "roles": ["president", "senator", "governor", "minister", "candidate"],
+                "events": ["election", "vote", "debate", "campaign", "inauguration"],
+                "institutions": ["congress", "senate", "parliament", "fed", "court"],
+                "policies": ["bill", "law", "regulation", "reform", "policy"],
+                "economic": ["rate", "inflation", "recession", "budget", "debt"]
+            },
+            "entertainment": {
+                "awards": ["oscar", "grammy", "emmy", "golden globe", "tony"],
+                "media": ["movie", "film", "song", "album", "show", "series"],
+                "roles": ["actor", "actress", "director", "producer", "artist"],
+                "events": ["premiere", "release", "concert", "festival", "ceremony"],
+                "metrics": ["box office", "ratings", "views", "sales", "streams"]
+            },
+            "tech": {
+                "companies": ["apple", "google", "microsoft", "meta", "openai"],
+                "products": ["iphone", "android", "windows", "chatgpt", "tesla"],
+                "concepts": ["ai", "cloud", "quantum", "metaverse", "web3"],
+                "events": ["launch", "release", "update", "acquisition", "ipo"],
+                "metrics": ["revenue", "users", "growth", "valuation", "share"]
+            }
+        }
+        
+        # Entrenar vectorizador
+        self.vectorizer = self._train_vectorizer()
+
+    def _train_vectorizer(self):
+        # Crear corpus de entrenamiento desde keywords
+        corpus = []
+        labels = []
+        for category, keyword_groups in self.category_keywords.items():
+            for group in keyword_groups.values():
+                corpus.extend(group)
+                labels.extend([category] * len(group))
+                
+        vectorizer = TfidfVectorizer(ngram_range=(1, 3))
+        vectorizer.fit(corpus)
+        return vectorizer
 
     def get_llm_response(self, user_input: str) -> str:
         system_message = SystemMessage(content=str(self.prompter.market_analyst()))
@@ -128,27 +191,123 @@ class Executor:
         result = self.llm.invoke(prompt)
         return result.content
 
-    def filter_events_with_rag(self, events: "list[SimpleEvent]") -> str:
-        prompt = self.prompter.filter_events()
-        print()
-        print("... prompting ... ", prompt)
-        print()
-        return self.chroma.events(events, prompt)
+    def detect_category(self, question: str) -> str:
+        # Preprocesar texto
+        doc = self.nlp(question.lower())
+        
+        # Extraer entidades nombradas y frases clave
+        entities = [ent.text for ent in doc.ents]
+        noun_phrases = [chunk.text for chunk in doc.noun_chunks]
+        
+        # Calcular scores para cada categoría
+        scores = defaultdict(float)
+        
+        # 1. Coincidencia directa con palabras clave
+        for category, keyword_groups in self.category_keywords.items():
+            for group_name, keywords in keyword_groups.items():
+                weight = 2.0 if group_name == "primary" else 1.0
+                for keyword in keywords:
+                    if keyword in question.lower():
+                        scores[category] += weight
+                        
+        # 2. Análisis de entidades y frases
+        for entity in entities + noun_phrases:
+            # Vectorizar y comparar con keywords de cada categoría
+            entity_vector = self.vectorizer.transform([entity])
+            for category, keyword_groups in self.category_keywords.items():
+                for keywords in keyword_groups.values():
+                    keyword_vectors = self.vectorizer.transform(keywords)
+                    similarity = np.mean(entity_vector.dot(keyword_vectors.T).toarray())
+                    scores[category] += similarity
+        
+        # Normalizar scores
+        total = sum(scores.values())
+        if total > 0:
+            scores = {k: v/total for k, v in scores.items()}
+            
+        # Retornar categoría con mayor score si supera un umbral
+        best_category = max(scores.items(), key=lambda x: x[1], default=("other", 0))
+        return best_category[0] if best_category[1] > 0.3 else "other"
+
+    def filter_events_with_rag(self, events: "list[SimpleEvent]") -> "list[tuple[SimpleEvent, float]]":
+        market_category = os.getenv("MARKET_CATEGORY", "all").lower()
+        
+        if market_category != "all":
+            filtered_events = []
+            for event in events:
+                question = event.metadata.get("question", event.title)
+                event_category = self.detect_category(question)
+                
+                # Imprimir para debug
+                print(f"\nQuestion: {question}")
+                print(f"Detected category: {event_category}")
+                
+                if event_category == market_category:
+                    filtered_events.append(event)
+            
+            print(f"\n{Fore.LIGHTBLUE_EX}Found {len(filtered_events)} {market_category} markets{Style.RESET_ALL}")
+            
+            if not filtered_events:
+                print(f"{Fore.YELLOW}No markets found for category: {market_category}{Style.RESET_ALL}")
+                return []
+                
+            events = filtered_events
+
+        return [(event, 1.0) for event in events]
 
     def map_filtered_events_to_markets(
-        self, filtered_events: "list[SimpleEvent]"
-    ) -> "list[SimpleMarket]":
+        self, filtered_events: "list[tuple[SimpleEvent, float]]"
+    ) -> "list[tuple[SimpleMarket, float]]":
+        if not filtered_events:
+            return []
+            
         markets = []
-        for e in filtered_events:
-            data = json.loads(e[0].json())
-            market_ids = data["metadata"]["markets"].split(",")
+        market_category = os.getenv("MARKET_CATEGORY", "all").lower()
+        
+        for event_tuple in filtered_events:
+            event = event_tuple[0]
+            if not isinstance(event, SimpleEvent):
+                continue
+                
+            # Usar metadata para obtener los market_ids
+            market_ids = event.metadata.get("markets", "").split(",")
             for market_id in market_ids:
-                market_data = self.gamma.get_market(market_id)
-                formatted_market_data = self.polymarket.map_api_to_market(market_data)
-                markets.append(formatted_market_data)
+                if not market_id:
+                    continue
+                try:
+                    market_data = self.gamma.get_market(market_id)
+                    # Verificar la categoría nuevamente
+                    question = market_data.get("question", "")
+                    if market_category != "all" and self.detect_category(question) != market_category:
+                        continue
+                        
+                    # Crear SimpleMarket solo si pasa el filtro de categoría
+                    simple_market = SimpleMarket(
+                        id=int(market_data.get("id")),
+                        question=question,
+                        description=market_data.get("description", ""),
+                        end=market_data.get("endDate", ""),
+                        active=True,
+                        funded=True,
+                        rewardsMinSize=0.0,
+                        rewardsMaxSpread=0.0,
+                        spread=0.0,
+                        outcomes=str(market_data.get("outcome", "[]")),
+                        outcome_prices=str(market_data.get("outcomePrices", "[]")),
+                        clob_token_ids=str(market_data.get("clobTokenIds", "[]"))
+                    )
+                    markets.append((simple_market, 1.0))
+                except Exception as e:
+                    print(f"{Fore.RED}Error getting market {market_id}: {str(e)}{Style.RESET_ALL}")
+                    continue
+                    
         return markets
 
     def filter_markets(self, markets) -> "list[tuple]":
+        if not markets:
+            print(f"{Fore.YELLOW}No markets to filter{Style.RESET_ALL}")
+            return []
+            
         prompt = self.prompter.filter_markets()
         print()
         print("... prompting ... ", prompt)
@@ -176,14 +335,15 @@ class Executor:
             print(f"{Fore.RED}Error extracting probability: {str(e)}{Style.RESET_ALL}")
             return None
 
-    def source_best_trade(self, market) -> dict:
+    def source_best_trade(self, market_tuple) -> dict:
         try:
-            market_document = market[0].dict()
-            market = market_document["metadata"]
-            outcome_prices = ast.literal_eval(market["outcome_prices"])
-            outcomes = ast.literal_eval(market["outcomes"])
-            question = market["question"]
-            description = market_document["page_content"]
+            market = market_tuple[0]  # SimpleMarket
+            
+            # Extraer los datos necesarios directamente del SimpleMarket
+            outcome_prices = ast.literal_eval(market.outcome_prices)
+            outcomes = ast.literal_eval(market.outcomes)
+            question = market.question
+            description = market.description
 
             # Obtener información relacionada
             related_info = self.search.get_related_markets(question)

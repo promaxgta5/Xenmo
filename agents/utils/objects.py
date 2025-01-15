@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
 from pydantic import BaseModel
 
 
@@ -196,20 +196,20 @@ class ComplexMarket(BaseModel):
 
 
 class SimpleEvent(BaseModel):
-    id: int
-    ticker: str
-    slug: str
+    id: str
     title: str
     description: str
-    end: str
-    active: bool
-    closed: bool
-    archived: bool
-    restricted: bool
-    new: bool
-    featured: bool
-    restricted: bool
     markets: str
+    metadata: Dict[str, Any]
+
+    def dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "markets": self.markets,
+            "metadata": self.metadata
+        }
 
 
 class Source(BaseModel):
