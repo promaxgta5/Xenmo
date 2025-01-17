@@ -84,8 +84,13 @@ This repo is inteded for use with Python 3.9
 
    ```
    pip install -r requirements.txt
-   ```
+   - (In case of error, try: pip cache purge && pip install -r requirements.txt --no-cache-dir)
 
+   +++
+
+   Install spaCy model:
+   ```
+   python -m spacy download en_core_web_sm
 5. Set up your environment variables:
 
    - Create a `.env` file in the project root directory
@@ -132,6 +137,17 @@ This repo is inteded for use with Python 3.9
    ./scripts/bash/build-docker.sh
    ./scripts/bash/run-docker-dev.sh
    ```
+
+## Common issues
+
+1. OSError: [E050] Can't find model 'en_core_web_sm'. It doesn't seem to be
+a Python package or a valid path to a data directory.
+```bash
+python -m spacy download en_core_web_sm
+-
+self.nlp = spacy.load("en_core_web_sm") OR python -m spacy download en_core_web_sm
+```
+
 
 ## Setup
 

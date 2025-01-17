@@ -1,5 +1,7 @@
 import typer
 from devtools import pprint
+from dotenv import load_dotenv
+import os
 
 from agents.polymarket.polymarket import Polymarket
 from agents.connectors.chroma import PolymarketRAG
@@ -7,6 +9,8 @@ from agents.connectors.news import News
 from agents.application.trade import Trader
 from agents.application.executor import Executor
 from agents.application.creator import Creator
+
+load_dotenv()
 
 app = typer.Typer()
 polymarket = Polymarket()
