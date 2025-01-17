@@ -88,9 +88,7 @@ This repo is inteded for use with Python 3.9
 
    +++
 
-   Install spaCy model:
    ```
-   python -m spacy download en_core_web_sm
 5. Set up your environment variables:
 
    - Create a `.env` file in the project root directory
