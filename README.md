@@ -109,9 +109,24 @@ This repo is inteded for use with Python 3.9
    MARKET_CATEGORY="all"  # Options: all, sports, politics, crypto, entertainment, tech
    ```
 
-6. Load your wallet with USDC.
+## Setup
 
-7. Try the command line interface...
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Download spaCy model:
+```bash
+python -m spacy download en_core_web_sm
+```
+
+3. Configure environment variables:
+...
+
+4. Load your wallet with USDC.
+
+5. Try the command line interface...
 
    ```
    python scripts/python/cli.py
@@ -123,7 +138,7 @@ This repo is inteded for use with Python 3.9
    python agents/application/trade.py
    ```
 
-8. Note: If running the command outside of docker, please set the following env var:
+6. Note: If running the command outside of docker, please set the following env var:
 
    ```
    export PYTHONPATH="."
@@ -145,22 +160,6 @@ python -m spacy download en_core_web_sm
 -
 self.nlp = spacy.load("en_core_web_sm") OR python -m spacy download en_core_web_sm
 ```
-
-
-## Setup
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Download spaCy model:
-```bash
-python -m spacy download en_core_web_sm
-```
-
-3. Configure environment variables:
-...
 
 ## Architecture 📚
 
