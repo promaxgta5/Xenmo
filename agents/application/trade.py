@@ -64,10 +64,14 @@ class Trader:
                         is_pinned = market_data.get('featured', False)
                         
                         if volume > 10000 or is_pinned:
-                            if not hasattr(event, 'trade'):
-                                event.trade = {}
-                            event.trade['market_data'] = market_data
-                            high_quality_events.append((event, 1.0))
+                            # Crear un diccionario con el evento y sus datos de trade
+                            event_with_trade = {
+                                'event': event,
+                                'trade': {
+                                    'market_data': market_data
+                                }
+                            }
+                            high_quality_events.append((event_with_trade, 1.0))
                             print(f"\nHigh quality market found: {market_data.get('question', '')}")
                             print(f"Volume: ${volume:,.2f}")
                             print(f"Featured: {is_pinned}")
@@ -105,6 +109,10 @@ class Trader:
                     print(f"YES: ${prices[0]} ({Fore.RED}{float(prices[0])*100:.1f}%{Style.RESET_ALL})")
                     print(f"NO: ${prices[1]} ({Fore.RED}{float(prices[1])*100:.1f}%{Style.RESET_ALL})")
                     print(f"Volume: ${float(market_data.volume if hasattr(market_data, 'volume') else 0):,.2f}")
+
+                    if not hasattr(market_data, 'clob_token_ids') or not market_data.clob_token_ids:
+                        print(f"Market {market_data.question} does not have token IDs")
+                        continue
 
                     best_trade = self.agent.source_best_trade(market_tuple)
                     

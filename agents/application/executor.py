@@ -258,7 +258,7 @@ class Executor:
         return filtered_events
 
     def map_filtered_events_to_markets(
-        self, filtered_events: "list[tuple[SimpleEvent, float]]"
+        self, filtered_events: "list[tuple[Dict, float]]"
     ) -> "list[tuple[SimpleMarket, float]]":
         if not filtered_events:
             return []
@@ -266,22 +266,23 @@ class Executor:
         markets = []
         
         for event_tuple in filtered_events:
-            event = event_tuple[0]
+            event_dict = event_tuple[0]  # Ahora es un diccionario
+            event = event_dict['event']  # Obtener el SimpleEvent del diccionario
+            trade_data = event_dict['trade']  # Obtener los datos del trade
+            
             if not isinstance(event, SimpleEvent):
                 continue
                 
             # Usar metadata para obtener los market_ids
             market_ids = event.metadata.get("markets", "").split(",")
+            
             for market_id in market_ids:
                 if not market_id:
                     continue
                 try:
-                    # Si el evento ya tiene market_data, usarlo
-                    if hasattr(event, 'trade') and 'market_data' in event.trade:
-                        market_data = event.trade['market_data']
-                    else:
-                        market_data = self.gamma.get_market(market_id)
-                        
+                    # Usar los datos del trade si están disponibles
+                    market_data = trade_data.get('market_data', self.gamma.get_market(market_id))
+                    
                     # Crear SimpleMarket
                     simple_market = SimpleMarket(
                         id=int(market_data.get("id")),
@@ -298,6 +299,7 @@ class Executor:
                         clob_token_ids=str(market_data.get("clobTokenIds", "[]"))
                     )
                     markets.append((simple_market, event_tuple[1]))
+                    
                 except Exception as e:
                     print(f"{Fore.RED}Error getting market {market_id}: {str(e)}{Style.RESET_ALL}")
                     continue

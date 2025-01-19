@@ -487,17 +487,12 @@ class Polymarket:
 
     def execute_market_order(self, market, amount):
         try:
-            # Obtener datos del mercado y trade
-            market_data = market[0].dict()["metadata"]
-            token_ids = ast.literal_eval(market_data["clob_token_ids"])
-            trade = market[0].dict().get("trade", {})
-            
-            # Obtener el side del trade calculado
-            side = trade.get("side", "SELL")
+            # Obtener datos del mercado usando los atributos correctos
+            token_ids = ast.literal_eval(market.clob_token_ids)  # Usar el atributo directamente
             
             # Si el trade dice SELL -> compramos NO
             # Si el trade dice BUY -> compramos YES
-            if side == "SELL":
+            if hasattr(market, 'trade') and market.trade.get('side') == "SELL":
                 token_id = token_ids[0]  # Token NO
                 position = "NO"
             else:
@@ -528,11 +523,11 @@ class Polymarket:
             print(f"Minimum size: {min_size} tokens")
             print(f"Minimum cost: ${min_cost:.4f} USDC")
             
-            # Crear orden usando OrderArgs con el tamaño mínimo
+            # Crear orden usando OrderArgs
             order_args = OrderArgs(
                 token_id=token_id,
-                size=min_size,  # Usar el tamaño mínimo en tokens
-                price=market_price,  # Usar el precio actual del mercado
+                size=min_size,
+                price=market_price,
                 side=BUY  # Siempre compramos (YES o NO)
             )
             
@@ -547,11 +542,11 @@ class Polymarket:
             
             if self.dry_run:
                 print(f"\n{Fore.GREEN}🔍 DRY RUN: Order would be executed with these parameters:{Style.RESET_ALL}")
-                print(f"{Fore.GREEN}   Token ID: {token_id}")
+                print(f"   Token ID: {token_id}")
                 print(f"   Position: {position}")
                 print(f"   Size: {min_size} tokens")
                 print(f"   Price: ${market_price}")
-                print(f"   Total Cost: ${min_cost:.4f} USDC{Style.RESET_ALL}")
+                print(f"   Total Cost: ${min_cost:.4f} USDC")
                 return {"status": "simulated", "dry_run": True}
                 
             return resp

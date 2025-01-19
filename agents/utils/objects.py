@@ -201,6 +201,7 @@ class SimpleEvent(BaseModel):
     description: str
     markets: str
     metadata: Dict[str, Any]
+    trade: dict = {}  # Añadir este campo con un valor por defecto
 
     def dict(self):
         return {
