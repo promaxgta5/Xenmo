@@ -106,6 +106,7 @@ This repo is inteded for use with Python 3.9
    NEWSAPI_API_KEY=""
    export PYTHONPATH="."
    DRY_RUN=
+   ANALYSIS_DELAY_SECONDS= #Default is 30secs
    MARKET_CATEGORY="all"  # Options: all, sports, politics, crypto, entertainment, tech
    ```
 
