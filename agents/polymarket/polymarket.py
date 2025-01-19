@@ -301,7 +301,7 @@ class Polymarket:
                 "active": "true",
                 "closed": "false",
                 "archived": "false",
-                "limit": "10",
+                "limit": "100",
                 "order": "volume",
                 "ascending": "false"
             }
@@ -321,10 +321,9 @@ class Polymarket:
                 if markets:
                     events = []
                     for market in markets:
-                        # Solo considerar mercados con volumen significativo
                         if float(market.get("volume", 0)) > 10000:
                             event_data = {
-                                "id": str(market.get("id")),  # Convertir a string
+                                "id": str(market.get("id")),
                                 "title": market.get("question", ""),
                                 "description": market.get("description", ""),
                                 "markets": str(market.get("id", "")),
@@ -334,17 +333,17 @@ class Polymarket:
                                     "volume": float(market.get("volume", 0)),
                                     "featured": market.get("featured", False),
                                     "outcome_prices": market.get("outcomePrices", "[]"),
-                                    "outcomes": market.get("outcome", "[]")
+                                    "outcomes": market.get("outcomes", "[]")
                                 }
                             }
-                            event = SimpleEvent(**event_data)
-                            events.append(event)
+                            events.append(SimpleEvent(**event_data))
                     
                     print(f"\nTop mercados por volumen total:")
                     for market in markets[:5]:
                         print(f"- {market.get('question')}: ${float(market.get('volume', 0)):,.2f}")
                     
                     return events
+                
             return []
         except Exception as e:
             print(f"Error getting events: {e}")
@@ -779,6 +778,30 @@ class Polymarket:
             if event.active and not event.closed 
             and float(event.volume) > min_volume
         ]
+
+    def detect_category(self, question: str) -> str:
+        """Detecta la categoría de un mercado basado en su pregunta"""
+        question = question.lower()
+        
+        # Keywords para cada categoría
+        politics_keywords = ['election', 'president', 'vote', 'congress', 'senate', 'minister', 'government', 'fed', 'rate', 'chancellor', 'prime minister']
+        sports_keywords = ['nba', 'nfl', 'mlb', 'soccer', 'football', 'basketball', 'baseball', 'league', 'cup', 'championship', 'win', 'relegated']
+        crypto_keywords = ['bitcoin', 'eth', 'crypto', 'token', 'blockchain', 'opensea', 'nft']
+        entertainment_keywords = ['movie', 'film', 'actor', 'actress', 'award', 'song', 'album', 'show']
+        tech_keywords = ['ai', 'openai', 'technology', 'software', 'app', 'launch']
+        
+        if any(keyword in question for keyword in politics_keywords):
+            return 'politics'
+        elif any(keyword in question for keyword in sports_keywords):
+            return 'sports'
+        elif any(keyword in question for keyword in crypto_keywords):
+            return 'crypto'
+        elif any(keyword in question for keyword in entertainment_keywords):
+            return 'entertainment'
+        elif any(keyword in question for keyword in tech_keywords):
+            return 'tech'
+        else:
+            return 'other'
 
 
 def test():

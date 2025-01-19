@@ -229,31 +229,33 @@ class Executor:
         best_category = max(scores.items(), key=lambda x: x[1], default=("other", 0))
         return best_category[0] if best_category[1] > 0.3 else "other"
 
-    def filter_events_with_rag(self, events: "list[SimpleEvent]") -> "list[tuple[SimpleEvent, float]]":
-        market_category = os.getenv("MARKET_CATEGORY", "all").lower()
+    def filter_events_with_rag(self, events: "list[tuple[SimpleEvent, float]]") -> "list[tuple[SimpleEvent, float]]":
+        """Filtra eventos por categoría"""
+        market_category = str(os.getenv("MARKET_CATEGORY", "all")).lower().strip()
+        print(f"\nFiltering {len(events)} events for category: {market_category}")
         
-        if market_category != "all":
-            filtered_events = []
-            for event in events:
-                question = event.metadata.get("question", event.title)
-                event_category = self.detect_category(question)
-                
-                # Imprimir para debug
-                print(f"\nQuestion: {question}")
-                print(f"Detected category: {event_category}")
-                
-                if event_category == market_category:
-                    filtered_events.append(event)
+        # Si es 'all', retornar todos los eventos
+        if market_category == 'all':
+            print(f"Returning all {len(events)} events")
+            return events
+        
+        filtered_events = []
+        for event_tuple in events:
+            event = event_tuple[0]
+            question = event.metadata.get("question", event.title)
+            event_category = self.detect_category(question)
             
-            print(f"\n{Fore.LIGHTBLUE_EX}Found {len(filtered_events)} {market_category} markets{Style.RESET_ALL}")
+            print(f"Question: {question}")
+            print(f"Detected category: {event_category}")
             
-            if not filtered_events:
-                print(f"{Fore.YELLOW}No markets found for category: {market_category}{Style.RESET_ALL}")
-                return []
-                
-            events = filtered_events
-
-        return [(event, 1.0) for event in events]
+            if event_category == market_category:
+                filtered_events.append(event_tuple)
+        
+        print(f"\nFound {len(filtered_events)} {market_category} markets")
+        if not filtered_events:
+            print(f"\nNo markets found for category: {market_category}")
+        
+        return filtered_events
 
     def map_filtered_events_to_markets(
         self, filtered_events: "list[tuple[SimpleEvent, float]]"
@@ -262,7 +264,6 @@ class Executor:
             return []
             
         markets = []
-        market_category = os.getenv("MARKET_CATEGORY", "all").lower()
         
         for event_tuple in filtered_events:
             event = event_tuple[0]
@@ -275,16 +276,16 @@ class Executor:
                 if not market_id:
                     continue
                 try:
-                    market_data = self.gamma.get_market(market_id)
-                    # Verificar la categoría nuevamente
-                    question = market_data.get("question", "")
-                    if market_category != "all" and self.detect_category(question) != market_category:
-                        continue
+                    # Si el evento ya tiene market_data, usarlo
+                    if hasattr(event, 'trade') and 'market_data' in event.trade:
+                        market_data = event.trade['market_data']
+                    else:
+                        market_data = self.gamma.get_market(market_id)
                         
-                    # Crear SimpleMarket solo si pasa el filtro de categoría
+                    # Crear SimpleMarket
                     simple_market = SimpleMarket(
                         id=int(market_data.get("id")),
-                        question=question,
+                        question=market_data.get("question", ""),
                         description=market_data.get("description", ""),
                         end=market_data.get("endDate", ""),
                         active=True,
@@ -292,11 +293,11 @@ class Executor:
                         rewardsMinSize=0.0,
                         rewardsMaxSpread=0.0,
                         spread=0.0,
-                        outcomes=str(market_data.get("outcome", "[]")),
+                        outcomes=str(market_data.get("outcomes", "[]")),
                         outcome_prices=str(market_data.get("outcomePrices", "[]")),
                         clob_token_ids=str(market_data.get("clobTokenIds", "[]"))
                     )
-                    markets.append((simple_market, 1.0))
+                    markets.append((simple_market, event_tuple[1]))
                 except Exception as e:
                     print(f"{Fore.RED}Error getting market {market_id}: {str(e)}{Style.RESET_ALL}")
                     continue

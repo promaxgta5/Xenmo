@@ -45,7 +45,7 @@ class Trader:
         try:
             self.pre_trade_logic()
 
-            events = self.polymarket.get_all_tradeable_events()
+            events = self.polymarket.get_all_events()
             print(f"{Fore.LIGHTBLUE_EX}1. FOUND {len(events)} EVENTS{Style.RESET_ALL}")
 
             # Filtrar primero por volumen y pins
@@ -53,26 +53,26 @@ class Trader:
             for event in events:
                 try:
                     event_data = event.dict()
-                    # Obtener los mercados asociados al evento
                     market_ids = event_data.get('markets', '').split(',')
                     
-                    # Verificar cada mercado asociado
                     for market_id in market_ids:
                         if not market_id:
                             continue
                             
                         market_data = self.gamma.get_market(market_id)
                         volume = float(market_data.get('volume', 0))
-                        is_pinned = market_data.get('featured', False)  # Usar 'featured' en lugar de 'pinned'
+                        is_pinned = market_data.get('featured', False)
                         
-                        # Filtrar eventos con alto volumen o que estén pinned
                         if volume > 10000 or is_pinned:
-                            high_quality_events.append(event)
+                            if not hasattr(event, 'trade'):
+                                event.trade = {}
+                            event.trade['market_data'] = market_data
+                            high_quality_events.append((event, 1.0))
                             print(f"\nHigh quality market found: {market_data.get('question', '')}")
                             print(f"Volume: ${volume:,.2f}")
                             print(f"Featured: {is_pinned}")
                             print("---")
-                            break  # Si encontramos un mercado que califica, no necesitamos revisar los demás
+                            break
                             
                 except Exception as e:
                     print(f"Error processing event: {e}")
