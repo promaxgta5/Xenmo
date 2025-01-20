@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/polymarket/agents">
-    <img src="public/0110(1)/0110(1).gif" alt="banner" width="466" height="262">
+    <img src="https://imgur.com/a/zwsrjuv" alt="banner" width="466" height="262">
   </a>
 
 <h3 align="center">Xenmo</h3>
