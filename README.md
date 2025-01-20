@@ -5,20 +5,20 @@
     <img src="public/0110(1)/0110(1).gif" alt="banner" width="466" height="262">
   </a>
 
-<h3 align="center">PolyAgent</h3>
+<h3 align="center">Xenmo</h3>
 
   <p align="center">
     Trade autonomously on Polymarket using AI Agents
     <br />
-    <a href="https://twitter.com/PolyAgent_ai"><strong>Twitter »</strong></a>
+    <a href="https://twitter.com/Xenmo_ai"><strong>Twitter »</strong></a>
   </p>
 </div>
 
 
 <!-- CONTENT -->
-# PolyAgent
+# Xenmo
 
-PolyAgent is the first AI agent able to bet on his own predictions directly through the Polymarket API —all registered in the Blockchain.
+Xenmo is the first AI agent able to bet on his own predictions directly through the Polymarket API —all registered in the Blockchain.
 
 
 ## Features ⚙️
@@ -56,8 +56,8 @@ This repo is inteded for use with Python 3.9
 1. Clone the repository
 
    ```
-   git clone https://github.com/{username}/Polyagent.git
-   cd Polyagent
+   git clone https://github.com/{username}/Xenmo.git
+   cd Xenmo
    ```
 
 2. Create the virtual environment
@@ -164,11 +164,11 @@ self.nlp = spacy.load("en_core_web_sm") OR python -m spacy download en_core_web_
 
 ## Architecture 📚
 
-The Polyagent architecture features modular components that can be maintained and extended by individual community members.
+The Xenmo architecture features modular components that can be maintained and extended by individual community members.
 
 ### APIs 🌐
 
-Polyagent connectors standardize data sources and order types.
+Xenmo connectors standardize data sources and order types.
 
 - `Chroma.py`: chroma DB for vectorizing news sources and other API data. Developers are able to add their own vector database implementations.
 
