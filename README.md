@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/promaxgta5/Xenmo">
-    <img src="https://i.imgur.com/6M7Hl5q.jpeg" alt="banner" width="466" height="262">
+    <img src="https://i.imgur.com/IpTX5Q0.jpeg" alt="banner">
   </a>
 
 <h3 align="center">Xenmo</h3>
