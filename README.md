@@ -8,7 +8,7 @@
 <h3 align="center">Xenmo</h3>
 
   <p align="center">
-    Trade autonomously on Polymarket using AI Agents
+    Trade autonomously
     <br />
     <a href="https://twitter.com/Xenmo_ai"><strong>Twitter »</strong></a>
   </p>
